@@ -4,7 +4,6 @@
 # Default Parameters
 # ---------------------
 num_epochs_values=(100)
-network_values=("CNN")
 subsample_time_values=(2 3 4 5 6 7 8 9)
 subsample_tx_values=(2 3 4 5 6 7 8 9)
 subsample_rx_values=(2 3 4 5 6 7 8 9)
@@ -65,11 +64,10 @@ done
 # ---------------------
 run_experiment() {
   local num_epochs=$1
-  local network=$2
-  local subtime=$3
-  local subtx=$4
-  local subrx=$5
-  local approach=$6
+  local subtime=$2
+  local subtx=$3
+  local subrx=$4
+  local approach=$5
   local approach_flag=""
 
   if [[ "$approach" != "" ]]; then
@@ -90,7 +88,6 @@ run_experiment() {
 
     cmd="python traintest.py \
       --num_epochs=$num_epochs \
-      --network=$network \
       --seed=$seed \
       --subsample_time=$subtime \
       --subsample_tx=$subtx \
@@ -110,49 +107,39 @@ run_experiment() {
 
 # Baseline (no subsampling)
 for num_epochs in "${num_epochs_values[@]}"; do
-  for network in "${network_values[@]}"; do
-    run_experiment $num_epochs $network 1 1 1 ""
-  done
+  run_experiment $num_epochs 1 1 1 ""
 done
 
 # Time subsampling
 for num_epochs in "${num_epochs_values[@]}"; do
-  for network in "${network_values[@]}"; do
-    for subtime in "${subsample_time_values[@]}"; do
-      run_experiment $num_epochs $network $subtime 1 1 ""
-    done
+  for subtime in "${subsample_time_values[@]}"; do
+    run_experiment $num_epochs $subtime 1 1 ""
   done
 done
 
 # TX-only subsampling
 for num_epochs in "${num_epochs_values[@]}"; do
-  for network in "${network_values[@]}"; do
-    for subtx in "${subsample_tx_values[@]}"; do
-      for approach in "${subsample_approaches[@]}"; do
-        run_experiment $num_epochs $network 1 $subtx 1 $approach
-      done
+  for subtx in "${subsample_tx_values[@]}"; do
+    for approach in "${subsample_approaches[@]}"; do
+      run_experiment $num_epochs 1 $subtx 1 $approach
     done
   done
 done
 
 # RX-only subsampling
 for num_epochs in "${num_epochs_values[@]}"; do
-  for network in "${network_values[@]}"; do
-    for subrx in "${subsample_rx_values[@]}"; do
-      for approach in "${subsample_approaches[@]}"; do
-        run_experiment $num_epochs $network 1 1 $subrx $approach
-      done
+  for subrx in "${subsample_rx_values[@]}"; do
+    for approach in "${subsample_approaches[@]}"; do
+      run_experiment $num_epochs 1 1 $subrx $approach
     done
   done
 done
 
 # All-beams subsampling
 for num_epochs in "${num_epochs_values[@]}"; do
-  for network in "${network_values[@]}"; do
-    for value in "${subsample_allbeams_values[@]}"; do
-      for approach in "${subsample_approaches[@]}"; do
-        run_experiment $num_epochs $network 1 $value $value $approach
-      done
+  for value in "${subsample_allbeams_values[@]}"; do
+    for approach in "${subsample_approaches[@]}"; do
+      run_experiment $num_epochs 1 $value $value $approach
     done
   done
 done

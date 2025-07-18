@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 13 01:49:34 2023
+
+@author: nisar
+"""
+
 import sys
 import math
 import random
@@ -101,6 +108,8 @@ def  train_test_model(net, train_data_loader,  test_data_loader,optimizer, crite
 
 
 def custom_split_tensor(tensor, block_starts, train, validation): #test is implicit
+    print(block_starts)
+    block_starts = torch.cat((torch.tensor([0]), block_starts))
 
     # List to store the three tensors for each part
     first_part = []
@@ -108,7 +117,7 @@ def custom_split_tensor(tensor, block_starts, train, validation): #test is impli
     third_part = []
 
     # Process each block
-    for i in range(len(block_starts) - 1):  # Last block is from block_starts[-1] to the end
+    for i in range(len(block_starts)):  # Last block is from block_starts[-1] to the end
         start_idx = block_starts[i]
         end_idx = block_starts[i + 1] if i + 1 < len(block_starts) else len(tensor)
 
@@ -248,7 +257,7 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    filename = "{}_epoch{}".format(args.network, args.num_epochs)
+    filename = "epoch{}".format(args.num_epochs)
 
 
     data=torch.load("dataset_concat/all_data.pth")
@@ -318,6 +327,25 @@ if __name__ == '__main__':
     print("n size of val data is", len(val_data_loader.dataset))
 
     print("size of test data is", len(test_data_loader.dataset))
+
+
+    def print_class_distribution(label_tensor, name):
+        counts = torch.bincount(label_tensor)
+        print(f"\nClass distribution in {name} set:")
+        for i, count in enumerate(counts):
+            print(f"  Class {i}: {count.item()} samples")
+        total = counts.sum().item()
+        print(f"  Total: {total} samples\n")
+
+
+    # Full dataset
+    print_class_distribution(labels, "full")
+
+    # Train / Val / Test sets
+    print_class_distribution(y_train, "train")
+    print_class_distribution(y_val, "validation")
+    print_class_distribution(y_test, "test")
+
 
     print("Data shape", data.shape)
     input_dim = math.prod(data.shape[1:])
