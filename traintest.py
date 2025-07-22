@@ -410,9 +410,9 @@ if __name__ == '__main__':
         plt.imshow(mean_saliency_map.detach().cpu().numpy(), cmap='hot', interpolation='nearest')
         cbar = plt.colorbar()
         # cbar.set_label("Beam pair saliency")
-        plt.xlabel("Tx beam index")
-        plt.ylabel("Rx beam index")
-        plt.title("Beam pair importance heatmap")
+        plt.xlabel("Rx beam index")
+        plt.ylabel("Tx beam index")
+        #plt.title("Beam pair importance heatmap")
         plt.savefig(filename + "_heatmap.png")
     else:
         print("No saliency map was computed.")
