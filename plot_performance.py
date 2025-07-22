@@ -28,7 +28,7 @@ USE_MEAN_STD = args.mean_std
 
 # === Filename Pattern ===
 pattern = re.compile(
-    r"(?P<network>CNN|MLP)_epoch(?P<epoch>\d+)"
+    r"epoch(?P<epoch>\d+)"
     r"(?:_subtime(?P<subtime>\d+))?"
     r"(?:_subtx(?P<subtx>\d+)(?:_(?P<approach_tx>repeated|interleaved))?)?"
     r"(?:_subrx(?P<subrx>\d+)(?:_(?P<approach_rx>repeated|interleaved))?)?"
@@ -72,7 +72,6 @@ def load_results(log_dir):
             continue
         params = m.groupdict()
         epoch = int(params["epoch"])
-        network = params["network"]
         seed = int(params["seed"])
         subtime = int(params["subtime"] or 1)
         subtx = int(params["subtx"] or 1)
@@ -81,14 +80,14 @@ def load_results(log_dir):
         acc = extract_accuracy(path)
         if acc is None:
             continue
-        key = (epoch, network, subtime, subtx, subrx, approach)
+        key = (epoch, subtime, subtx, subrx, approach)
         results.setdefault(key, []).append(acc)
     return results
 
-def get_baseline(results, epoch, network):
+def get_baseline(results, epoch):
     accs = []
-    for (ep, net, subtime, subtx, subrx, _), vals in results.items():
-        if ep == epoch and net == network and subtime == subtx == subrx == 1:
+    for (ep, subtime, subtx, subrx, _), vals in results.items():
+        if ep == epoch and subtime == subtx == subrx == 1:
             accs.extend(vals)
     if accs:
         if USE_MEAN_STD:
@@ -118,14 +117,14 @@ def adjust_x(subsample, x_vals):
         return (0.5 * (tx + rx)) ** 2
     return x_vals
 
-def collect_line_with_baseline(results, epoch, network, approach, subsample):
-    baseline_val, _ = get_baseline(results, epoch, network)
+def collect_line_with_baseline(results, epoch, approach, subsample):
+    baseline_val, _ = get_baseline(results, epoch)
     if baseline_val is None:
         return np.array([]), np.array([]), np.array([])
 
     raw_data = [(1, baseline_val)]
-    for (ep, net, subtime, subtx, subrx, app), acc_list in results.items():
-        if ep != epoch or net != network or app != approach:
+    for (ep, subtime, subtx, subrx, app), acc_list in results.items():
+        if ep != epoch or app != approach:
             continue
         if subtime == 1 and subtx == 1 and subrx == 1:
             continue
@@ -202,11 +201,11 @@ if USE_ACTUAL_S_VALS:
 
 for dir_idx, (log_dir, alpha, linestyle, star_color) in reversed(list(enumerate(LOG_DIRS))):
     results = load_results(log_dir)
-    epochs_networks = sorted(set((k[0], k[1]) for k in results))
+    epochs = sorted(set(k[0] for k in results))
     added_labels = set()
 
-    for (epoch, network) in epochs_networks:
-        baseline_val, (err_low, err_high) = get_baseline(results, epoch, network)
+    for epoch in epochs:
+        baseline_val, (err_low, err_high) = get_baseline(results, epoch)
         if baseline_val is None:
             continue
 
@@ -226,7 +225,7 @@ for dir_idx, (log_dir, alpha, linestyle, star_color) in reversed(list(enumerate(
             for approach in approaches:
                 if approach == "interleaved" and not SHOW_INTERLEAVED:
                     continue
-                x, m, errs = collect_line_with_baseline(results, epoch, network, approach, subsample)
+                x, m, errs = collect_line_with_baseline(results, epoch, approach, subsample)
                 if len(x) == 0:
                     continue
 
@@ -237,7 +236,7 @@ for dir_idx, (log_dir, alpha, linestyle, star_color) in reversed(list(enumerate(
                 if alpha == 1.0 and not USE_ACTUAL_S_VALS:
                     offset = (subsample_idx - 1.5) * (offset_spacing / 2)
                     xplot = np.where(x != 1, xplot + offset, xplot)
-
+                print(subsample, xplot, m)
                 ax.plot(xplot, m, linestyle=linestyle, color=color, alpha=alpha)
 
                 if alpha == 1.0:
@@ -258,7 +257,7 @@ for dir_idx, (log_dir, alpha, linestyle, star_color) in reversed(list(enumerate(
                     added_labels.add(label)
 
 ax.set_xlim(0.5, 9.5)
-ax.set_ylim(90.3, 95.5)
+ax.set_ylim(90, 94.5)
 ax.set_xlabel("Subsampling factor (target)" if not USE_ACTUAL_S_VALS else "Subsampling factor (actual)")
 ax.set_ylabel("Accuracy")
 ax.grid(True)
